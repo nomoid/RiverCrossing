@@ -2,6 +2,8 @@ package entities;
 
 import com.badlogic.gdx.graphics.Color;
 
+import static entities.CollisionHandler.PUSH;
+
 public class Player extends Entity {
     public Player(EntityContext context, int x, int y) {
         super(context);
@@ -17,5 +19,10 @@ public class Player extends Entity {
     @Override
     public String getText() {
         return "P";
+    }
+
+    @Override
+    public CollisionHandler getCollisionHandler() {
+        return PUSH;
     }
 }

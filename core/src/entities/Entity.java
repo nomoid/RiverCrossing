@@ -42,4 +42,6 @@ public abstract class Entity {
 
     // Nullable
     public abstract String getText();
+
+    public abstract CollisionHandler getCollisionHandler();
 }

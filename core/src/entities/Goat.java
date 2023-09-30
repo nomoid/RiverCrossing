@@ -2,6 +2,8 @@ package entities;
 
 import com.badlogic.gdx.graphics.Color;
 
+import static entities.CollisionHandler.PUSH;
+
 public class Goat extends Entity {
 
     public Goat(EntityContext context, int x, int y) {
@@ -18,5 +20,10 @@ public class Goat extends Entity {
     @Override
     public String getText() {
         return "G";
+    }
+
+    @Override
+    public CollisionHandler getCollisionHandler() {
+        return PUSH;
     }
 }

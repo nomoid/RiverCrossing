@@ -13,6 +13,8 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import entities.*;
 
+import java.util.ArrayList;
+
 public class MainGame extends ApplicationAdapter {
 
     public static final int WIDTH = 1280;
@@ -129,18 +131,74 @@ public class MainGame extends ApplicationAdapter {
         }
     }
 
+
+    private boolean tryMove(int originalX, int originalY, int dx, int dy) {
+        int newX = originalX + dx;
+        int newY = originalY + dy;
+        ArrayList<Entity> originalEntities = new ArrayList<>();
+        ArrayList<Entity> collidedEntities = new ArrayList<>();
+        // TODO: Add in boat check
+        for (Entity entity : entities) {
+            if (entity.getX() == originalX && entity.getY() == originalY) {
+                originalEntities.add(entity);
+            }
+            if (entity.getX() == newX && entity.getY() == newY) {
+                collidedEntities.add(entity);
+            }
+        }
+        if (collidedEntities.isEmpty()) {
+            for (Entity entity : originalEntities) {
+                entity.setPosition(newX, newY);
+            }
+            return true;
+        }
+        CollisionHandler handler = null;
+        for (Entity entity : collidedEntities) {
+            CollisionHandler newHandler = entity.getCollisionHandler();
+            if (handler == null) {
+                handler = newHandler;
+            } else {
+                if (newHandler.priority > handler.priority) {
+                    handler = newHandler;
+                }
+            }
+        }
+        switch (handler) {
+            case BOAT:
+                break;
+            case RIVER:
+                break;
+            case STOP:
+                break;
+            case PUSH:
+                int newDX = Integer.signum(dx);
+                int newDY = Integer.signum(dy);
+                if (tryMove(newX, newY, newDX, newDY)) {
+                    for (Entity entity : originalEntities) {
+                        entity.setPosition(newX, newY);
+                    }
+                    return true;
+                }
+                break;
+        }
+        return false;
+    }
+
     private void update() {
+        int playerX = player.getX();
+        int playerY = player.getY();
+        // Player movement
         if (Gdx.input.isKeyJustPressed(Input.Keys.W)) {
-            player.changePosition(0, speed);
+            tryMove(playerX, playerY, 0, speed);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.A)) {
-            player.changePosition(-speed, 0);
+            tryMove(playerX, playerY, -speed, 0);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
-            player.changePosition(0, -speed);
+            tryMove(playerX, playerY, 0, -speed);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
-            player.changePosition(speed, 0);
+            tryMove(playerX, playerY, speed, 0);
         }
     }
 

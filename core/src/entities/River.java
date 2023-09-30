@@ -2,6 +2,8 @@ package entities;
 
 import com.badlogic.gdx.graphics.Color;
 
+import static entities.CollisionHandler.RIVER;
+
 public class River extends Entity {
 
     public River(EntityContext context, int x, int y) {
@@ -18,5 +20,10 @@ public class River extends Entity {
     @Override
     public String getText() {
         return null;
+    }
+
+    @Override
+    public CollisionHandler getCollisionHandler() {
+        return RIVER;
     }
 }
