@@ -24,11 +24,12 @@ public class MainGame extends ApplicationAdapter {
     FitViewport viewport;
     BitmapFont font;
     EntityContext entities;
-    Entity player;
+    Player player;
+    Boat boat;
 
     private final int speed = 1;
     private final int minX = -5;
-    private final int maxX = 5;
+    private final int maxX = 10;
     private final int minY = -5;
     private final int maxY = 5;
 
@@ -38,6 +39,7 @@ public class MainGame extends ApplicationAdapter {
         new Cabbage(entities, -2, 2);
         for (int i = minY; i <= maxY; i++) {
             new River(entities, 2, i);
+            new River(entities, 3, i);
         }
         for (int i = minX; i <= maxX; i++) {
             new Wall(entities, i, minY);
@@ -47,7 +49,8 @@ public class MainGame extends ApplicationAdapter {
             new Wall(entities, minX, i);
             new Wall(entities, maxX, i);
         }
-        player = new Player(entities);
+        boat = new Boat(entities, 2, 0);
+        player = new Player(entities, 0, 0);
     }
 
     @Override
