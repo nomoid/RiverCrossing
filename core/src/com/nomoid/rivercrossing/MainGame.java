@@ -19,23 +19,36 @@ public class MainGame extends ApplicationAdapter {
     OrthographicCamera camera;
     FitViewport viewport;
     Texture img;
+    EntityContext entities;
+    Entity player;
 
-    private int x = 100;
-    private int y = 100;
-    private final int speed = 50;
+    private final int speed = 1;
 
     @Override
     public void create() {
+        entities = new EntityContext();
         batch = new SpriteBatch();
         shapeRenderer = new ShapeRenderer();
         camera = new OrthographicCamera();
         viewport = new FitViewport(WIDTH, HEIGHT, camera);
         img = new Texture("badlogic.jpg");
+        player = new Player(entities);
     }
 
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height);
+    }
+
+    public int tileWidth = 50;
+    public int tileHeight = 50;
+
+    public float translateX(int x) {
+        return x * tileWidth;
+    }
+
+    public float translateY(int y) {
+        return y * tileHeight;
     }
 
     private void draw() {
@@ -47,24 +60,26 @@ public class MainGame extends ApplicationAdapter {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0.3f, 0.3f, 0.3f, 1);
         shapeRenderer.rect(0, 0, 50, 50);
-        shapeRenderer.setColor(1, 1, 0.4f, 1);
-        shapeRenderer.rect(x, y, 50, 50);
+        for (Entity entity : entities) {
+            shapeRenderer.setColor(entity.getColor());
+            shapeRenderer.rect(translateX(entity.getX()), translateY(entity.getY()), translateX(1), translateY(1));
+        }
         shapeRenderer.end();
 
     }
 
     private void update() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.W)) {
-            y += speed;
+            player.changePosition(0, speed);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.A)) {
-            x -= speed;
+            player.changePosition(-speed, 0);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
-            y -= speed;
+            player.changePosition(0, -speed);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
-            x += speed;
+            player.changePosition(speed, 0);
         }
     }
 
