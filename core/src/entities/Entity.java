@@ -1,12 +1,12 @@
-package com.nomoid.rivercrossing;
+package entities;
 
 
 import com.badlogic.gdx.graphics.Color;
 
 public abstract class Entity {
     private static int nextId = 0;
-    private int x;
-    private int y;
+    protected int x;
+    protected int y;
     private final int id;
 
     public Entity(EntityContext context) {

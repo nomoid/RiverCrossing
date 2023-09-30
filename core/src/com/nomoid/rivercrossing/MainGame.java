@@ -11,11 +11,13 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import entities.*;
 
 public class MainGame extends ApplicationAdapter {
 
     public static final int WIDTH = 1280;
     public static final int HEIGHT = 800;
+    public static final Color BACKGROUND = new Color(0.7f, 0.5f, 0.4f, 1);
     SpriteBatch batch;
     ShapeRenderer shapeRenderer;
     OrthographicCamera camera;
@@ -25,6 +27,28 @@ public class MainGame extends ApplicationAdapter {
     Entity player;
 
     private final int speed = 1;
+    private final int minX = -5;
+    private final int maxX = 5;
+    private final int minY = -5;
+    private final int maxY = 5;
+
+    private void generateLevel() {
+        new Wolf(entities, -2, -2);
+        new Goat(entities, -2, 0);
+        new Cabbage(entities, -2, 2);
+        for (int i = minY; i <= maxY; i++) {
+            new River(entities, 2, i);
+        }
+        for (int i = minX; i <= maxX; i++) {
+            new Wall(entities, i, minY);
+            new Wall(entities, i, maxY);
+        }
+        for (int i = minY; i <= maxY; i++) {
+            new Wall(entities, minX, i);
+            new Wall(entities, maxX, i);
+        }
+        player = new Player(entities);
+    }
 
     @Override
     public void create() {
@@ -36,7 +60,7 @@ public class MainGame extends ApplicationAdapter {
 //        font = new BitmapFont();
         font = new BitmapFont(Gdx.files.internal("fonts/Roboto-Medium-72.fnt"));
         font.setUseIntegerPositions(false);
-        player = new Player(entities);
+        generateLevel();
     }
 
     @Override
@@ -61,46 +85,45 @@ public class MainGame extends ApplicationAdapter {
         style.font = font;
         style.fontColor = Color.BLACK;
 
-        ScreenUtils.clear(0.8f, 0.8f, 0.9f, 1);
+        ScreenUtils.clear(BACKGROUND);
 
-        shapeRenderer.setProjectionMatrix(camera.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.3f, 0.3f, 0.3f, 1);
-        shapeRenderer.rect(0, 0, 50, 50);
         for (Entity entity : entities) {
-            shapeRenderer.setColor(entity.getColor());
-            float screenX = translateX(entity.getX());
-            float screenY = translateY(entity.getY());
-            float screenWidth = translateX(1);
-            float screenHeight = translateY(1);
-            shapeRenderer.rect(screenX - screenWidth / 2.0f, screenY - screenHeight / 2.0f, screenWidth, screenHeight);
-            shapeRenderer.setColor(Color.RED);
-        }
-        shapeRenderer.end();
-
-        batch.setProjectionMatrix(camera.combined);
-        batch.begin();
-        batch.setColor(Color.WHITE);
-        Label hello = new Label("Hello", style);
-        hello.setPosition(0, 0);
-        hello.draw(batch, 1);
-        for (Entity entity : entities) {
-            String text = entity.getText();
-            if (text != null) {
+            // Render box
+            {
+                shapeRenderer.setProjectionMatrix(camera.combined);
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                shapeRenderer.setColor(entity.getColor());
                 float screenX = translateX(entity.getX());
                 float screenY = translateY(entity.getY());
-                Label label = new Label(text, style);
-                float fontScale = 0.5f;
-                label.setFontScale(fontScale);
-                label.invalidate();
-                float screenWidth = label.getPrefWidth();
-                float screenHeight = label.getPrefHeight() / fontScale;
-                label.setPosition(screenX - screenWidth / 2.0f, screenY - screenHeight / 2.0f);
-                label.draw(batch, 1);
+                float screenWidth = translateX(1);
+                float screenHeight = translateY(1);
+                shapeRenderer.rect(screenX - screenWidth / 2.0f, screenY - screenHeight / 2.0f, screenWidth, screenHeight);
+                shapeRenderer.end();
+            }
+
+            // Render text
+            {
+                batch.setProjectionMatrix(camera.combined);
+                batch.begin();
+                batch.setColor(Color.WHITE);
+
+                String text = entity.getText();
+                if (text != null) {
+                    float screenX = translateX(entity.getX());
+                    float screenY = translateY(entity.getY());
+                    Label label = new Label(text, style);
+                    float fontScale = 0.5f;
+                    label.setFontScale(fontScale);
+                    label.invalidate();
+                    float screenWidth = label.getPrefWidth();
+                    // Not sure why I need to divide by fontscale here but it works
+                    float screenHeight = label.getPrefHeight() / fontScale;
+                    label.setPosition(screenX - screenWidth / 2.0f, screenY - screenHeight / 2.0f);
+                    label.draw(batch, 1);
+                }
+                batch.end();
             }
         }
-        batch.end();
-
     }
 
     private void update() {

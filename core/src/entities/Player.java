@@ -1,4 +1,4 @@
-package com.nomoid.rivercrossing;
+package entities;
 
 import com.badlogic.gdx.graphics.Color;
 
@@ -9,7 +9,7 @@ public class Player extends Entity {
 
     @Override
     public Color getColor() {
-        return new Color(1, 1, 0.4f, 1);
+        return new Color(1, 1, 1, 1);
     }
 
     @Override

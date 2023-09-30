@@ -1,4 +1,4 @@
-package com.nomoid.rivercrossing;
+package entities;
 
 import java.util.HashMap;
 import java.util.Iterator;
