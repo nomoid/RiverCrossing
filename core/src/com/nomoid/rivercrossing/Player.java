@@ -11,4 +11,9 @@ public class Player extends Entity {
     public Color getColor() {
         return new Color(1, 1, 0.4f, 1);
     }
+
+    @Override
+    public String getText() {
+        return "P";
+    }
 }

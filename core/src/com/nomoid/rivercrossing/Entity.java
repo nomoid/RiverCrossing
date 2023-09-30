@@ -39,4 +39,7 @@ public abstract class Entity {
     }
 
     public abstract Color getColor();
+
+    // Nullable
+    public abstract String getText();
 }
