@@ -165,8 +165,10 @@ public class MainGame extends ApplicationAdapter {
         }
         switch (handler) {
             case BOAT:
+                // TODO: Handle boat
                 break;
             case RIVER:
+                // TODO: Handle river
                 break;
             case STOP:
                 break;
