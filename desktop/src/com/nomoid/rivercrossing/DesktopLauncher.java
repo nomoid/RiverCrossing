@@ -7,6 +7,8 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 public class DesktopLauncher {
     public static void main(String[] arg) {
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
+        config.setResizable(false);
+        config.setWindowedMode(MainGame.WIDTH, MainGame.HEIGHT);
         config.setForegroundFPS(60);
         config.setTitle("RiverCrossing");
         new Lwjgl3Application(new MainGame(), config);
