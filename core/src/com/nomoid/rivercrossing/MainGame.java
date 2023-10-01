@@ -3,14 +3,6 @@ package com.nomoid.rivercrossing;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.FitViewport;
 import entities.*;
 
 import java.util.ArrayList;
@@ -19,15 +11,12 @@ public class MainGame extends ApplicationAdapter {
 
     public static final int WIDTH = 1280;
     public static final int HEIGHT = 800;
-    public static final Color BACKGROUND = new Color(0.7f, 0.5f, 0.4f, 1);
-    SpriteBatch batch;
-    ShapeRenderer shapeRenderer;
-    OrthographicCamera camera;
-    FitViewport viewport;
-    BitmapFont font;
     EntityContext entities;
+    Renderer renderer;
     Player player;
     Boat boat;
+
+    int currentLevel = 1;
 
     private final int speed = 1;
     private final int minX = -5;
@@ -36,99 +25,50 @@ public class MainGame extends ApplicationAdapter {
     private final int maxY = 5;
 
     private void generateLevel() {
-        new Wolf(entities, -2, -2);
-        new Goat(entities, -2, 0);
-        new Cabbage(entities, -2, 2);
-        for (int i = minY; i <= maxY; i++) {
-            new River(entities, 2, i);
-            new River(entities, 3, i);
+        entities.reset();
+        switch (currentLevel) {
+            case 1:
+                new Wolf(entities, -2, -2);
+                new Goat(entities, -2, 0);
+                new Cabbage(entities, -2, 2);
+                for (int i = minY + 1; i <= maxY - 1; i++) {
+                    new River(entities, 2, i);
+                    new River(entities, 3, i);
+                }
+                for (int i = minX; i <= maxX; i++) {
+                    new Wall(entities, i, minY);
+                    new Wall(entities, i, maxY);
+                }
+                for (int i = minY + 1; i <= maxY - 1; i++) {
+                    new Wall(entities, minX, i);
+                    new Wall(entities, maxX, i);
+                }
+                boat = new Boat(entities, 2, 0);
+                player = new Player(entities, 0, 0);
+                break;
+            default:
+                break;
         }
-        for (int i = minX; i <= maxX; i++) {
-            new Wall(entities, i, minY);
-            new Wall(entities, i, maxY);
-        }
-        for (int i = minY; i <= maxY; i++) {
-            new Wall(entities, minX, i);
-            new Wall(entities, maxX, i);
-        }
-        boat = new Boat(entities, 2, 0);
-        player = new Player(entities, 0, 0);
     }
 
     @Override
     public void create() {
         entities = new EntityContext();
-        batch = new SpriteBatch();
-        shapeRenderer = new ShapeRenderer();
-        camera = new OrthographicCamera();
-        viewport = new FitViewport(WIDTH, HEIGHT, camera);
-//        font = new BitmapFont();
-        font = new BitmapFont(Gdx.files.internal("fonts/Roboto-Medium-72.fnt"));
-        font.setUseIntegerPositions(false);
+        renderer = new Renderer();
         generateLevel();
     }
 
     @Override
     public void resize(int width, int height) {
-        viewport.update(width, height);
-    }
-
-    public int tileWidth = 50;
-    public int tileHeight = 50;
-
-    public float translateX(int x) {
-        return x * tileWidth;
-    }
-
-    public float translateY(int y) {
-        return y * tileHeight;
+        renderer.update(width, height);
     }
 
     private void draw() {
+        renderer.begin();
 
-        Label.LabelStyle style = new Label.LabelStyle();
-        style.font = font;
-        style.fontColor = Color.BLACK;
+        renderer.renderEntities(entities);
 
-        ScreenUtils.clear(BACKGROUND);
-
-        for (Entity entity : entities) {
-            // Render box
-            {
-                shapeRenderer.setProjectionMatrix(camera.combined);
-                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-                shapeRenderer.setColor(entity.getColor());
-                float screenX = translateX(entity.getX());
-                float screenY = translateY(entity.getY());
-                float screenWidth = translateX(1);
-                float screenHeight = translateY(1);
-                shapeRenderer.rect(screenX - screenWidth / 2.0f, screenY - screenHeight / 2.0f, screenWidth, screenHeight);
-                shapeRenderer.end();
-            }
-
-            // Render text
-            {
-                batch.setProjectionMatrix(camera.combined);
-                batch.begin();
-                batch.setColor(Color.WHITE);
-
-                String text = entity.getText();
-                if (text != null) {
-                    float screenX = translateX(entity.getX());
-                    float screenY = translateY(entity.getY());
-                    Label label = new Label(text, style);
-                    float fontScale = 0.5f;
-                    label.setFontScale(fontScale);
-                    label.invalidate();
-                    float screenWidth = label.getPrefWidth();
-                    // Not sure why I need to divide by fontscale here but it works
-                    float screenHeight = label.getPrefHeight() / fontScale;
-                    label.setPosition(screenX - screenWidth / 2.0f, screenY - screenHeight / 2.0f);
-                    label.draw(batch, 1);
-                }
-                batch.end();
-            }
-        }
+        renderer.end();
     }
 
 
@@ -187,6 +127,10 @@ public class MainGame extends ApplicationAdapter {
     }
 
     private void update() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+            generateLevel();
+            return;
+        }
         int playerX = player.getX();
         int playerY = player.getY();
         // Player movement
@@ -212,8 +156,7 @@ public class MainGame extends ApplicationAdapter {
 
     @Override
     public void dispose() {
-        batch.dispose();
-        shapeRenderer.dispose();
+        renderer.dispose();
     }
 
 }
