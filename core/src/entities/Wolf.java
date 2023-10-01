@@ -1,8 +1,14 @@
 package entities;
 
 import com.badlogic.gdx.graphics.Color;
+import com.nomoid.rivercrossing.Coordinate;
 
-import static entities.CollisionHandler.PUSH;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+
+import static entities.CollisionHandler.*;
 
 public class Wolf extends Entity {
 
@@ -25,5 +31,39 @@ public class Wolf extends Entity {
     @Override
     public CollisionHandler getCollisionHandler() {
         return PUSH;
+    }
+
+    @Override
+    public boolean hasIndependentBehavior() {
+        return true;
+    }
+
+    @Override
+    public boolean independentBehavior(EntityContext context, int tickCount) {
+        for (Entity entity : context) {
+            if (entity instanceof Goat) {
+                HashSet<CollisionHandler> blockers =
+                        new HashSet<>(Arrays.asList(
+                                STOP,
+                                RIVER,
+                                BOAT,
+                                PLAYER,
+                                PUSH
+                        ));
+                Coordinate target = Coordinate.fromEntity(entity);
+                HashSet<Coordinate> ignore = new HashSet<>(Collections.singletonList(target));
+                List<Coordinate> canReach = context.canReach(this, entity, blockers, ignore);
+                if (canReach == null || canReach.size() < 2) {
+                    continue;
+                }
+                Coordinate nextStep = canReach.get(1);
+                if (nextStep.equals(target)) {
+                    context.enqueueRemoval(entity.getId());
+                }
+                setPosition(nextStep.x, nextStep.y);
+                return true;
+            }
+        }
+        return false;
     }
 }

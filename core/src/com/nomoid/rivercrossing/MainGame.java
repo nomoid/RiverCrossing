@@ -5,9 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import entities.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class MainGame extends ApplicationAdapter {
 
@@ -20,29 +18,44 @@ public class MainGame extends ApplicationAdapter {
     int currentLevel = 1;
 
     private final int speed = 1;
-    private final int minX = -5;
-    private final int maxX = 10;
-    private final int minY = -5;
-    private final int maxY = 5;
+
+
+    private int minX;
+    private int minY;
+    private int maxX;
+    private int maxY;
+    private boolean canMove = true;
+    private boolean shouldUpdateAuto = false;
+    private float sinceLastTick = 0;
+    private int tickCount = 0;
+    private float tickLength = 0.5f;
+
+    private void generateWalls() {
+        for (int i = minX; i <= maxX; i++) {
+            new Wall(entities, i, minY);
+            new Wall(entities, i, maxY);
+        }
+        for (int i = minY + 1; i <= maxY - 1; i++) {
+            new Wall(entities, minX, i);
+            new Wall(entities, maxX, i);
+        }
+    }
 
     private void generateLevel() {
-        entities.reset();
         switch (currentLevel) {
             case 1:
+                minX = -5;
+                maxX = 10;
+                minY = -5;
+                maxY = 5;
+                entities.reset(minX, maxX, minY, maxY);
+                generateWalls();
                 new Wolf(entities, -2, -2);
                 new Goat(entities, -2, 0);
                 new Cabbage(entities, -2, 2);
                 for (int i = minY + 1; i <= maxY - 1; i++) {
                     new River(entities, 2, i);
                     new River(entities, 3, i);
-                }
-                for (int i = minX; i <= maxX; i++) {
-                    new Wall(entities, i, minY);
-                    new Wall(entities, i, maxY);
-                }
-                for (int i = minY + 1; i <= maxY - 1; i++) {
-                    new Wall(entities, minX, i);
-                    new Wall(entities, maxX, i);
                 }
                 new Boat(entities, 2, 0, 1);
                 new Boat(entities, 2, 2, 1);
@@ -51,11 +64,13 @@ public class MainGame extends ApplicationAdapter {
             default:
                 break;
         }
+        tickCount = 0;
+        canMove = true;
     }
 
     @Override
     public void create() {
-        entities = new EntityContext();
+        entities = new EntityContext(0, 0, 0, 0);
         renderer = new Renderer();
         generateLevel();
     }
@@ -66,7 +81,7 @@ public class MainGame extends ApplicationAdapter {
     }
 
     private void draw() {
-        renderer.begin();
+        renderer.begin(canMove);
 
         renderer.renderEntities(entities);
 
@@ -198,24 +213,72 @@ public class MainGame extends ApplicationAdapter {
         int playerX = player.getX();
         int playerY = player.getY();
         // Player movement
-        if (Gdx.input.isKeyJustPressed(Input.Keys.W)) {
-            tryMove(playerX, playerY, 0, speed);
+        if (canMove) {
+            boolean triedMove = false;
+            if (Gdx.input.isKeyJustPressed(Input.Keys.W)) {
+                tryMove(playerX, playerY, 0, speed);
+                triedMove = true;
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.A)) {
+                tryMove(playerX, playerY, -speed, 0);
+                triedMove = true;
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
+                tryMove(playerX, playerY, 0, -speed);
+                triedMove = true;
+            }
+            if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
+                tryMove(playerX, playerY, speed, 0);
+                triedMove = true;
+            }
+            if (triedMove) {
+                shouldUpdateAuto = true;
+                canMove = false;
+                sinceLastTick = tickLength;
+            }
         }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.A)) {
-            tryMove(playerX, playerY, -speed, 0);
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
-            tryMove(playerX, playerY, 0, -speed);
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
-            tryMove(playerX, playerY, speed, 0);
+        entities.processRemoval();
+    }
+
+    private void updateAuto() {
+        if (shouldUpdateAuto) {
+            sinceLastTick += Gdx.graphics.getDeltaTime();
+            if (sinceLastTick >= tickLength) {
+                tickCount++;
+                boolean anyChange = false;
+                for (Entity entity : entities) {
+                    if (entity.hasIndependentBehavior()) {
+                        HashSet<CollisionHandler> blockers =
+                                new HashSet<>(Arrays.asList(
+                                        CollisionHandler.STOP,
+                                        CollisionHandler.RIVER,
+                                        CollisionHandler.BOAT));
+                        if (entities.canReach(player, entity, blockers, new HashSet<>()) != null) {
+                            System.out.println("Can reach " + entity.getClass().getName());
+                        } else {
+                            boolean changed = entity.independentBehavior(entities, tickCount);
+                            if (changed) {
+                                anyChange = true;
+                            }
+                        }
+                    }
+                }
+                if (anyChange) {
+                    canMove = false;
+                    sinceLastTick = 0.0f;
+                } else {
+                    canMove = true;
+                }
+            }
         }
     }
 
     @Override
     public void render() {
+        shouldUpdateAuto = !canMove;
         draw();
         update();
+        updateAuto();
     }
 
     @Override

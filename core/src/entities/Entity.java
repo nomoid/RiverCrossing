@@ -44,4 +44,13 @@ public abstract class Entity {
     public abstract String getText();
 
     public abstract CollisionHandler getCollisionHandler();
+
+    public boolean hasIndependentBehavior() {
+        return false;
+    }
+
+    public boolean independentBehavior(EntityContext context, int tickCount) {
+        // To override
+        return false;
+    }
 }

@@ -20,7 +20,8 @@ import java.util.Map;
 
 public class Renderer {
 
-    public static final Color BACKGROUND = new Color(0.7f, 0.5f, 0.4f, 1);
+    public static final Color CAN_MOVE_BACKGROUND = new Color(0.7f, 0.5f, 0.4f, 1);
+    public static final Color CANNOT_MOVE_BACKGROUND = new Color(0.7f, 0.1f, 0.0f, 1);
 
     private final SpriteBatch batch;
     private final ShapeRenderer shapeRenderer;
@@ -51,9 +52,15 @@ public class Renderer {
         viewport.update(width, height);
     }
 
-    public void begin() {
+    public void begin(boolean canMove) {
 
-        ScreenUtils.clear(BACKGROUND);
+        Color background;
+        if (canMove) {
+            background = CAN_MOVE_BACKGROUND;
+        } else {
+            background = CANNOT_MOVE_BACKGROUND;
+        }
+        ScreenUtils.clear(background);
     }
 
     private final int tileWidth = 50;
