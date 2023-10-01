@@ -20,9 +20,6 @@ import java.util.Map;
 
 public class Renderer {
 
-    public static final Color CAN_MOVE_BACKGROUND = new Color(0.7f, 0.5f, 0.4f, 1);
-    public static final Color CANNOT_MOVE_BACKGROUND = new Color(0.7f, 0.1f, 0.0f, 1);
-
     private final SpriteBatch batch;
     private final ShapeRenderer shapeRenderer;
     private final OrthographicCamera camera;
@@ -52,13 +49,17 @@ public class Renderer {
         viewport.update(width, height);
     }
 
-    public void begin(boolean canMove) {
+    public void begin(boolean canMove, boolean lost, boolean won) {
 
         Color background;
-        if (canMove) {
-            background = CAN_MOVE_BACKGROUND;
+        if (lost) {
+            background = new Color(0.4f, 0.1f, 0.0f, 1);
+        } else if (won) {
+            background = new Color(0.6f, 0.8f, 0.4f, 1);
+        } else if (!canMove) {
+            background = new Color(0.7f, 0.1f, 0.0f, 1);
         } else {
-            background = CANNOT_MOVE_BACKGROUND;
+            background = new Color(0.7f, 0.5f, 0.4f, 1);
         }
         ScreenUtils.clear(background);
     }
@@ -102,29 +103,32 @@ public class Renderer {
         boolean isMini = miniOffset != 0;
         // Render box
         {
-            shapeRenderer.setProjectionMatrix(camera.combined);
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            shapeRenderer.setColor(entity.getColor());
-            float screenX = translateX(entity.getX(), miniOffsetX);
-            float screenY = translateY(entity.getY(), miniOffsetY);
-            float screenWidth = translateX(1, 0);
-            float screenHeight = translateY(1, 0);
-            if (isMini) {
-                screenWidth /= 3.0f;
-                screenHeight /= 3.0f;
+            Color color = entity.getColor();
+            if (color != null) {
+                shapeRenderer.setProjectionMatrix(camera.combined);
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                shapeRenderer.setColor(entity.getColor());
+                float screenX = translateX(entity.getX(), miniOffsetX);
+                float screenY = translateY(entity.getY(), miniOffsetY);
+                float screenWidth = translateX(1, 0);
+                float screenHeight = translateY(1, 0);
+                if (isMini) {
+                    screenWidth /= 3.0f;
+                    screenHeight /= 3.0f;
+                }
+                shapeRenderer.rect(screenX - screenWidth / 2.0f, screenY - screenHeight / 2.0f, screenWidth, screenHeight);
+                shapeRenderer.end();
             }
-            shapeRenderer.rect(screenX - screenWidth / 2.0f, screenY - screenHeight / 2.0f, screenWidth, screenHeight);
-            shapeRenderer.end();
         }
 
         // Render text
         {
-            batch.setProjectionMatrix(camera.combined);
-            batch.begin();
-            batch.setColor(Color.WHITE);
-
             String text = entity.getText();
             if (text != null) {
+                batch.setProjectionMatrix(camera.combined);
+                batch.begin();
+                batch.setColor(Color.WHITE);
+
                 float screenX = translateX(entity.getX(), miniOffsetX);
                 float screenY = translateY(entity.getY(), miniOffsetY);
                 Label label = new Label(text, labelStyle);
@@ -139,8 +143,9 @@ public class Renderer {
                 float screenHeight = label.getPrefHeight() / fontScale;
                 label.setPosition(screenX - screenWidth / 2.0f, screenY - screenHeight / 2.0f);
                 label.draw(batch, 1);
+
+                batch.end();
             }
-            batch.end();
         }
 
     }
@@ -148,6 +153,9 @@ public class Renderer {
     public void renderEntities(EntityContext entities) {
         LinkedHashMap<Coordinate, ArrayList<Entity>> entitiesByCoordinate = new LinkedHashMap<>();
         for (Entity entity : entities) {
+            if (entity.getColor() == null) {
+                continue;
+            }
             Coordinate coord = Coordinate.fromEntity(entity);
             ArrayList<Entity> atCoord =
                     entitiesByCoordinate.get(coord);

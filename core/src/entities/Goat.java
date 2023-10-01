@@ -4,7 +4,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.nomoid.rivercrossing.Coordinate;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
@@ -50,8 +49,9 @@ public class Goat extends Entity {
                                 PLAYER,
                                 PUSH
                         ));
+                Coordinate source = Coordinate.fromEntity(this);
                 Coordinate target = Coordinate.fromEntity(entity);
-                HashSet<Coordinate> ignore = new HashSet<>(Collections.singletonList(target));
+                HashSet<Coordinate> ignore = new HashSet<>(Arrays.asList(source, target));
                 List<Coordinate> canReach = context.canReach(this, entity, blockers, ignore);
                 if (canReach == null || canReach.size() < 2) {
                     continue;

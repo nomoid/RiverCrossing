@@ -6,6 +6,7 @@ import com.badlogic.gdx.Input;
 import entities.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MainGame extends ApplicationAdapter {
 
@@ -14,6 +15,7 @@ public class MainGame extends ApplicationAdapter {
     EntityContext entities;
     Renderer renderer;
     Player player;
+    Victory victory;
 
     int currentLevel = 1;
 
@@ -25,6 +27,8 @@ public class MainGame extends ApplicationAdapter {
     private int maxX;
     private int maxY;
     private boolean canMove = true;
+    private boolean lost = false;
+    private boolean won = false;
     private boolean shouldUpdateAuto = false;
     private float sinceLastTick = 0;
     private int tickCount = 0;
@@ -50,15 +54,19 @@ public class MainGame extends ApplicationAdapter {
                 maxY = 5;
                 entities.reset(minX, maxX, minY, maxY);
                 generateWalls();
-                new Wolf(entities, -2, -2);
-                new Goat(entities, -2, 0);
-                new Cabbage(entities, -2, 2);
+                Entity[] required = {
+                        new Wolf(entities, -2, -2),
+                        new Goat(entities, -2, 0),
+                        new Cabbage(entities, -2, 2),
+                };
+                victory = new Victory(entities, 6, 0, Arrays.stream(required)
+                        .map(Entity::getId)
+                        .collect(Collectors.toList()));
                 for (int i = minY + 1; i <= maxY - 1; i++) {
                     new River(entities, 2, i);
                     new River(entities, 3, i);
                 }
                 new Boat(entities, 2, 0, 1);
-                new Boat(entities, 2, 2, 1);
                 player = new Player(entities, 0, 0);
                 break;
             default:
@@ -66,6 +74,8 @@ public class MainGame extends ApplicationAdapter {
         }
         tickCount = 0;
         canMove = true;
+        lost = false;
+        won = false;
     }
 
     @Override
@@ -81,7 +91,7 @@ public class MainGame extends ApplicationAdapter {
     }
 
     private void draw() {
-        renderer.begin(canMove);
+        renderer.begin(canMove, lost, won);
 
         renderer.renderEntities(entities);
 
@@ -138,6 +148,9 @@ public class MainGame extends ApplicationAdapter {
         ArrayList<Entity> originalEntities = new ArrayList<>();
         ArrayList<Entity> collidedEntities = new ArrayList<>();
         for (Entity entity : entities) {
+            if (entity.getCollisionHandler() == CollisionHandler.VICTORY) {
+                continue;
+            }
             if (entity.getX() == originalX && entity.getY() == originalY) {
                 originalEntities.add(entity);
             }
@@ -213,7 +226,7 @@ public class MainGame extends ApplicationAdapter {
         int playerX = player.getX();
         int playerY = player.getY();
         // Player movement
-        if (canMove) {
+        if (canMove && !lost && !won) {
             boolean triedMove = false;
             if (Gdx.input.isKeyJustPressed(Input.Keys.W)) {
                 tryMove(playerX, playerY, 0, speed);
@@ -253,7 +266,8 @@ public class MainGame extends ApplicationAdapter {
                                         CollisionHandler.STOP,
                                         CollisionHandler.RIVER,
                                         CollisionHandler.BOAT));
-                        if (entities.canReach(player, entity, blockers, new HashSet<>()) != null) {
+                        if (entities.canReach(player, entity, blockers,
+                                new HashSet<>(Collections.singletonList(Coordinate.fromEntity(player)))) != null) {
                             System.out.println("Can reach " + entity.getClass().getName());
                         } else {
                             boolean changed = entity.independentBehavior(entities, tickCount);
@@ -273,12 +287,31 @@ public class MainGame extends ApplicationAdapter {
         }
     }
 
+    private void checkEnd() {
+        won = true;
+        for (int id : victory.required) {
+            Entity entity = entities.getEntity(id);
+            if (entity == null) {
+                lost = true;
+                break;
+            }
+            if (entities.canReach(entity, victory,
+                    new HashSet<>(Arrays.asList(
+                            CollisionHandler.STOP,
+                            CollisionHandler.RIVER,
+                            CollisionHandler.BOAT)), new HashSet<>()) == null) {
+                won = false;
+            }
+        }
+    }
+
     @Override
     public void render() {
         shouldUpdateAuto = !canMove;
         draw();
         update();
         updateAuto();
+        checkEnd();
     }
 
     @Override

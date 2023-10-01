@@ -108,6 +108,17 @@ public class EntityContext implements Iterable<Entity> {
     }
 
     public List<Coordinate> canReach(Entity sourceEntity, Entity targetEntity, Set<CollisionHandler> blockers, Set<Coordinate> ignore) {
+        for (Entity entity : this) {
+            CollisionHandler collisionHandler = entity.getCollisionHandler();
+            if (blockers.contains(collisionHandler)) {
+                Coordinate entityCoord = Coordinate.fromEntity(entity);
+                if (!ignore.contains(entityCoord)) {
+                    if (Coordinate.fromEntity(sourceEntity).equals(entityCoord)) {
+                        return null;
+                    }
+                }
+            }
+        }
         int largeValue = 1000000000;
         Coordinate source = Coordinate.fromEntity(sourceEntity);
         Coordinate target = Coordinate.fromEntity(targetEntity);
