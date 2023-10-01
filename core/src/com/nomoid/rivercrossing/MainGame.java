@@ -45,6 +45,7 @@ public class MainGame extends ApplicationAdapter {
                     new Wall(entities, maxX, i);
                 }
                 new Boat(entities, 2, 0, 1);
+                new Boat(entities, 2, 2, 1);
                 player = new Player(entities, 0, 0);
                 break;
             default:
@@ -82,8 +83,8 @@ public class MainGame extends ApplicationAdapter {
         }
     }
 
-    private boolean handleMove(List<Entity> originalEntities, boolean onBoat, int newX, int newY) {
-        if (onBoat) {
+    private boolean handleMove(List<Entity> originalEntities, boolean disembark, int newX, int newY) {
+        if (disembark) {
             Boat boat = null;
             for (Entity entity : originalEntities) {
                 if (entity instanceof Boat) {
@@ -99,18 +100,18 @@ public class MainGame extends ApplicationAdapter {
             }
             Entity entity = entities.getEntity(boat.getCarry().remove(0));
             doMove(Collections.singletonList(entity), newX, newY);
-            return true;
+            return false;
         } else {
             doMove(originalEntities, newX, newY);
             return true;
         }
     }
 
-    private boolean handlePush(List<Entity> originalEntities, boolean onBoat, int newX, int newY, int dx, int dy) {
+    private boolean handlePush(List<Entity> originalEntities, boolean disembark, int newX, int newY, int dx, int dy) {
         int newDX = Integer.signum(dx);
         int newDY = Integer.signum(dy);
         if (tryMove(newX, newY, newDX, newDY)) {
-            return handleMove(originalEntities, onBoat, newX, newY);
+            return handleMove(originalEntities, disembark, newX, newY);
         }
         return false;
     }
@@ -129,7 +130,7 @@ public class MainGame extends ApplicationAdapter {
                 collidedEntities.add(entity);
             }
         }
-        boolean onBoat = originalEntities.stream().anyMatch((Entity entity) -> entity.getCollisionHandler() == CollisionHandler.BOAT);
+        Boat onBoat = (Boat) originalEntities.stream().filter((Entity entity) -> entity.getCollisionHandler() == CollisionHandler.BOAT).findFirst().orElse(null);
         CollisionHandler handler = null;
         Entity handlerEntity = null;
         for (Entity entity : collidedEntities) {
@@ -145,12 +146,22 @@ public class MainGame extends ApplicationAdapter {
             }
         }
         if (collidedEntities.isEmpty()) {
-            return handleMove(originalEntities, onBoat, newX, newY);
+            return handleMove(originalEntities, onBoat != null, newX, newY);
         }
         switch (handler) {
             case BOAT:
-                if (onBoat) {
-                    return handlePush(originalEntities, onBoat, newX, newY, dx, dy);
+                if (onBoat != null) {
+                    Boat boat = (Boat) handlerEntity;
+                    ArrayList<Integer> carry = boat.getCarry();
+                    ArrayList<Integer> onBoatCarry = onBoat.getCarry();
+                    for (Entity entity : originalEntities) {
+                        if (entity.getCollisionHandler() == CollisionHandler.PLAYER) {
+                            doMove(Collections.singletonList(entity), newX, newY);
+                            carry.add(entity.getId());
+                            onBoatCarry.remove((Integer) entity.getId());
+                        }
+                    }
+                    return true;
                 } else {
                     Boat boat = (Boat) handlerEntity;
                     ArrayList<Integer> carry = boat.getCarry();
@@ -166,7 +177,7 @@ public class MainGame extends ApplicationAdapter {
                     return allMoved;
                 }
             case RIVER:
-                if (onBoat) {
+                if (onBoat != null) {
                     doMove(originalEntities, newX, newY);
                     return true;
                 }
@@ -174,7 +185,7 @@ public class MainGame extends ApplicationAdapter {
             case STOP:
                 break;
             case PUSH:
-                return handlePush(originalEntities, onBoat, newX, newY, dx, dy);
+                return handlePush(originalEntities, onBoat != null, newX, newY, dx, dy);
         }
         return false;
     }
