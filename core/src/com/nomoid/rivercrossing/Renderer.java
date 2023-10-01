@@ -69,6 +69,12 @@ public class Renderer {
         drawString("Move it all across", -10, 0, 3, 0, 0.5f);
         drawString("Limited space on the boat", -10, 0, 2, 0, 0.5f);
         drawString("Wish you best of luck", -10, 0, 1, 0, 0.5f);
+        if (lost) {
+            drawString("You lose!", -10, 0, -4, 0, 1);
+        }
+        if (won) {
+            drawString("You win!", -10, 0, -4, 0, 1);
+        }
     }
 
     private final int tileWidth = 50;
