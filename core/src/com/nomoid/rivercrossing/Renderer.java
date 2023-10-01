@@ -51,6 +51,7 @@ public class Renderer {
 
     public void begin(boolean canMove, boolean lost, boolean won) {
 
+
         Color background;
         if (lost) {
             background = new Color(0.4f, 0.1f, 0.0f, 1);
@@ -62,6 +63,12 @@ public class Renderer {
             background = new Color(0.7f, 0.5f, 0.4f, 1);
         }
         ScreenUtils.clear(background);
+
+        drawString("WASD to move", -10, 0, -2, 0, 1);
+        drawString("R to restart", -10, 0, -3, 0, 1);
+        drawString("Move it all across", -10, 0, 3, 0, 0.5f);
+        drawString("Limited space on the boat", -10, 0, 2, 0, 0.5f);
+        drawString("Wish you best of luck", -10, 0, 1, 0, 0.5f);
     }
 
     private final int tileWidth = 50;
@@ -95,6 +102,27 @@ public class Renderer {
         return 0;
     }
 
+    private void drawString(String string, int x, int miniOffsetX, int y, int miniOffsetY, float miniFactor) {
+        batch.setProjectionMatrix(camera.combined);
+        batch.begin();
+        batch.setColor(Color.WHITE);
+
+        float screenX = translateX(x, miniOffsetX);
+        float screenY = translateY(y, miniOffsetY);
+        Label label = new Label(string, labelStyle);
+        float fontScale = 0.5f * miniFactor;
+        label.setFontScale(fontScale);
+        label.invalidate();
+        float screenWidth = label.getPrefWidth();
+        // Not sure why I need to divide by fontscale here but it works
+        float screenHeight = label.getPrefHeight() / fontScale;
+        label.setPosition(screenX - screenWidth / 2.0f, screenY - screenHeight / 2.0f);
+        label.draw(batch, 1);
+
+        batch.end();
+
+    }
+
     // miniOffset = 0: Not mini
     // miniOffset = 1-9: Mini
     private void renderEntity(Entity entity, int miniOffset) {
@@ -125,26 +153,7 @@ public class Renderer {
         {
             String text = entity.getText();
             if (text != null) {
-                batch.setProjectionMatrix(camera.combined);
-                batch.begin();
-                batch.setColor(Color.WHITE);
-
-                float screenX = translateX(entity.getX(), miniOffsetX);
-                float screenY = translateY(entity.getY(), miniOffsetY);
-                Label label = new Label(text, labelStyle);
-                float fontScale = 0.5f;
-                if (isMini) {
-                    fontScale /= 3.0f;
-                }
-                label.setFontScale(fontScale);
-                label.invalidate();
-                float screenWidth = label.getPrefWidth();
-                // Not sure why I need to divide by fontscale here but it works
-                float screenHeight = label.getPrefHeight() / fontScale;
-                label.setPosition(screenX - screenWidth / 2.0f, screenY - screenHeight / 2.0f);
-                label.draw(batch, 1);
-
-                batch.end();
+                drawString(text, entity.getX(), miniOffsetX, entity.getY(), miniOffsetY, isMini ? 1 / 3.0f : 1f);
             }
         }
 
