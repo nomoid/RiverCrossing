@@ -2,7 +2,7 @@ package entities;
 
 import com.badlogic.gdx.graphics.Color;
 
-import static entities.CollisionHandler.PUSH;
+import static entities.CollisionHandler.PLAYER;
 
 public class Player extends Entity {
     public Player(EntityContext context, int x, int y) {
@@ -23,6 +23,6 @@ public class Player extends Entity {
 
     @Override
     public CollisionHandler getCollisionHandler() {
-        return PUSH;
+        return PLAYER;
     }
 }

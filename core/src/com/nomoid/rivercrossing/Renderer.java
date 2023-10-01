@@ -10,9 +10,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import entities.Boat;
+import entities.CollisionHandler;
 import entities.Entity;
 import entities.EntityContext;
-import entities.River;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -157,8 +157,8 @@ public class Renderer {
             } else {
                 int miniOffset = 1;
                 Boat boat = null;
+                ArrayList<Integer> boatCarry = new ArrayList<>();
                 for (Entity entity : atCoord) {
-                    // In the future, maybe generalize this to all vehicles
                     if (entity instanceof Boat) {
                         boat = (Boat) entity;
                         break;
@@ -166,14 +166,21 @@ public class Renderer {
                 }
                 if (boat != null) {
                     renderEntity(boat, 0);
+                    boatCarry = boat.getCarry();
+                }
+                for (Integer id : boatCarry) {
+                    Entity entity = entities.getEntity(id);
+                    renderEntity(entity, miniOffset);
+                    miniOffset++;
                 }
                 for (Entity entity : atCoord) {
-                    boolean isBoat =
-                            entity instanceof Boat;
-                    boolean isRiver = entity instanceof River;
                     boolean hasBoat = (boat != null);
+                    boolean inBoat = boatCarry.contains(entity.getId());
+                    boolean isBoat =
+                            entity.getCollisionHandler() == CollisionHandler.BOAT;
+                    boolean isRiver = entity.getCollisionHandler() == CollisionHandler.RIVER;
 
-                    if (!hasBoat || (!isBoat && !isRiver)) {
+                    if (!hasBoat || (!inBoat && !isBoat && !isRiver)) {
                         renderEntity(entity, miniOffset);
                         miniOffset++;
                     }

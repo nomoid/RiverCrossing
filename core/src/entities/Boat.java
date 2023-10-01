@@ -2,14 +2,30 @@ package entities;
 
 import com.badlogic.gdx.graphics.Color;
 
+import java.util.ArrayList;
+
 import static entities.CollisionHandler.BOAT;
 
 public class Boat extends Entity {
 
-    public Boat(EntityContext context, int x, int y) {
+    // Excluding player
+    private final int capacity;
+    private final ArrayList<Integer> carry;
+
+    public Boat(EntityContext context, int x, int y, int capacity) {
         super(context);
         this.x = x;
         this.y = y;
+        this.capacity = capacity;
+        this.carry = new ArrayList<>();
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public ArrayList<Integer> getCarry() {
+        return carry;
     }
 
     @Override

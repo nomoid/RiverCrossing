@@ -1,7 +1,7 @@
 package entities;
 
 public enum CollisionHandler {
-    PUSH(0), STOP(1), RIVER(2), BOAT(3);
+    PLAYER(0), PUSH(1), STOP(2), RIVER(3), BOAT(4);
 
     public final int priority;
 

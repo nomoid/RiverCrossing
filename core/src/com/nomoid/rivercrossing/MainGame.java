@@ -6,6 +6,8 @@ import com.badlogic.gdx.Input;
 import entities.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class MainGame extends ApplicationAdapter {
 
@@ -14,7 +16,6 @@ public class MainGame extends ApplicationAdapter {
     EntityContext entities;
     Renderer renderer;
     Player player;
-    Boat boat;
 
     int currentLevel = 1;
 
@@ -43,7 +44,7 @@ public class MainGame extends ApplicationAdapter {
                     new Wall(entities, minX, i);
                     new Wall(entities, maxX, i);
                 }
-                boat = new Boat(entities, 2, 0);
+                new Boat(entities, 2, 0, 1);
                 player = new Player(entities, 0, 0);
                 break;
             default:
@@ -71,13 +72,55 @@ public class MainGame extends ApplicationAdapter {
         renderer.end();
     }
 
+    private void doMove(List<Entity> entities, int newX, int newY) {
+        for (Entity entity : entities) {
+            if (entity.getCollisionHandler() == CollisionHandler.BOAT ||
+                    entity.getCollisionHandler() == CollisionHandler.PLAYER ||
+                    entity.getCollisionHandler() == CollisionHandler.PUSH) {
+                entity.setPosition(newX, newY);
+            }
+        }
+    }
+
+    private boolean handleMove(List<Entity> originalEntities, boolean onBoat, int newX, int newY) {
+        if (onBoat) {
+            Boat boat = null;
+            for (Entity entity : originalEntities) {
+                if (entity instanceof Boat) {
+                    Boat boatCandidate = (Boat) entity;
+                    if (!boatCandidate.getCarry().isEmpty()) {
+                        boat = boatCandidate;
+                        break;
+                    }
+                }
+            }
+            if (boat == null) {
+                return false;
+            }
+            Entity entity = entities.getEntity(boat.getCarry().remove(0));
+            doMove(Collections.singletonList(entity), newX, newY);
+            return true;
+        } else {
+            doMove(originalEntities, newX, newY);
+            return true;
+        }
+    }
+
+    private boolean handlePush(List<Entity> originalEntities, boolean onBoat, int newX, int newY, int dx, int dy) {
+        int newDX = Integer.signum(dx);
+        int newDY = Integer.signum(dy);
+        if (tryMove(newX, newY, newDX, newDY)) {
+            return handleMove(originalEntities, onBoat, newX, newY);
+        }
+        return false;
+    }
+
 
     private boolean tryMove(int originalX, int originalY, int dx, int dy) {
         int newX = originalX + dx;
         int newY = originalY + dy;
         ArrayList<Entity> originalEntities = new ArrayList<>();
         ArrayList<Entity> collidedEntities = new ArrayList<>();
-        // TODO: Add in boat check
         for (Entity entity : entities) {
             if (entity.getX() == originalX && entity.getY() == originalY) {
                 originalEntities.add(entity);
@@ -86,42 +129,52 @@ public class MainGame extends ApplicationAdapter {
                 collidedEntities.add(entity);
             }
         }
-        if (collidedEntities.isEmpty()) {
-            for (Entity entity : originalEntities) {
-                entity.setPosition(newX, newY);
-            }
-            return true;
-        }
+        boolean onBoat = originalEntities.stream().anyMatch((Entity entity) -> entity.getCollisionHandler() == CollisionHandler.BOAT);
         CollisionHandler handler = null;
+        Entity handlerEntity = null;
         for (Entity entity : collidedEntities) {
             CollisionHandler newHandler = entity.getCollisionHandler();
             if (handler == null) {
                 handler = newHandler;
+                handlerEntity = entity;
             } else {
                 if (newHandler.priority > handler.priority) {
                     handler = newHandler;
+                    handlerEntity = entity;
                 }
             }
         }
+        if (collidedEntities.isEmpty()) {
+            return handleMove(originalEntities, onBoat, newX, newY);
+        }
         switch (handler) {
             case BOAT:
-                // TODO: Handle boat
-                break;
+                if (onBoat) {
+                    return handlePush(originalEntities, onBoat, newX, newY, dx, dy);
+                } else {
+                    Boat boat = (Boat) handlerEntity;
+                    ArrayList<Integer> carry = boat.getCarry();
+                    boolean allMoved = true;
+                    for (Entity entity : originalEntities) {
+                        if (boat.getCapacity() > carry.size() || entity.getCollisionHandler() == CollisionHandler.PLAYER) {
+                            doMove(Collections.singletonList(entity), newX, newY);
+                            carry.add(entity.getId());
+                        } else {
+                            allMoved = false;
+                        }
+                    }
+                    return allMoved;
+                }
             case RIVER:
-                // TODO: Handle river
+                if (onBoat) {
+                    doMove(originalEntities, newX, newY);
+                    return true;
+                }
                 break;
             case STOP:
                 break;
             case PUSH:
-                int newDX = Integer.signum(dx);
-                int newDY = Integer.signum(dy);
-                if (tryMove(newX, newY, newDX, newDY)) {
-                    for (Entity entity : originalEntities) {
-                        entity.setPosition(newX, newY);
-                    }
-                    return true;
-                }
-                break;
+                return handlePush(originalEntities, onBoat, newX, newY, dx, dy);
         }
         return false;
     }
